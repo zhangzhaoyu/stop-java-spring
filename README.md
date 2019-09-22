@@ -4,3 +4,4 @@
 3. https://www.cnkirito.moe/gracefully-shutdown/
 4. https://blog.csdn.net/gududedabai/article/details/96972407
 5. https://my.oschina.net/go4it/blog/1801604
+6. https://jiyiren.github.io/2018/06/18/jvm-exit/
