@@ -67,11 +67,10 @@ public class StopJavaSpringApplication implements ApplicationContextAware {
 
     @Bean
     public WebServerFactoryCustomizer tomcatCustomizer() {
-        return new WebServerFactoryCustomizer<TomcatServletWebServerFactory>() {
-
-            @Override
-            public void customize(TomcatServletWebServerFactory factory) {
-                factory.addConnectorCustomizers(gracefulShutdown());
+        return factory -> {
+            if (factory instanceof TomcatServletWebServerFactory) {
+                ((TomcatServletWebServerFactory) factory)
+                        .addConnectorCustomizers(gracefulShutdown());
             }
         };
     }
@@ -90,10 +89,13 @@ public class StopJavaSpringApplication implements ApplicationContextAware {
 
         @Override
         public void onApplicationEvent(ContextClosedEvent event) {
+            // 暂停接收新的请求
             this.connector.pause();
             Executor executor = this.connector.getProtocolHandler().getExecutor();
+            //
             if (executor instanceof ThreadPoolExecutor) {
                 try {
+                    // 等待 30s 线程池org.apache.tomcat.util.threads.ThreadPoolExecutor 完成所有请求
                     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
                     threadPoolExecutor.shutdown();
                     if (!threadPoolExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
@@ -102,10 +104,10 @@ public class StopJavaSpringApplication implements ApplicationContextAware {
                     }
                 }
                 catch (InterruptedException ex) {
+                    // 30s 未完成 强制关闭 该逻辑也可以写在bash 中
                     Thread.currentThread().interrupt();
                 }
             }
         }
-
     }
 }
